@@ -8,6 +8,6 @@ Les chats doivent empêcher l'attaque des pandas, au travail !
 
 ## Ressources 
 
-[Règles YARA](
-https://github.com/Neo23x0/Loki 
-https://github.com/Neo23x0/yarGen)
+[Règles YARA](https://github.com/Neo23x0/Loki)
+
+[Générer des règles YARA](https://github.com/Neo23x0/yarGen)
