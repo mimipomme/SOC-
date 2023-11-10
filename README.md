@@ -6,8 +6,12 @@ Les chats doivent empêcher l'attaque des pandas, au travail !
 
 
 
-## Ressources 
+## Ressources côté chats (SOC)
 
 [Règles YARA](https://github.com/Neo23x0/Loki)
 
 [Générer des règles YARA](https://github.com/Neo23x0/yarGen)
+
+## Ressources côté pandas (Attaquants)
+
+[ATM](https://github.com/redcanaryco/atomic-red-team)
