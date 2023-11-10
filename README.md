@@ -9,5 +9,5 @@ Les chats doivent empêcher l'attaque des pandas, au travail !
 ## Ressources 
 
 [Règles YARA](
-Règles : https://github.com/Neo23x0/Loki 
-Génération de règles : https://github.com/Neo23x0/yarGen)
+https://github.com/Neo23x0/Loki 
+https://github.com/Neo23x0/yarGen)
