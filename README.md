@@ -15,4 +15,4 @@ Les chats doivent empêcher l'attaque des pandas, au travail !
 
 ## Ressources côté pandas (Attaquants)
 
-[ATM](https://github.com/redcanaryco/atomic-red-team)
+[Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
