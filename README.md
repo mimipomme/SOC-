@@ -13,6 +13,6 @@ Les chats doivent empêcher l'attaque des pandas, au travail !
 [Générer des règles YARA](https://github.com/Neo23x0/yarGen)
 
 
-## Ressources côté pandas (Attaquants)
+## Ressources côté pandas (APT)
 
 [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
