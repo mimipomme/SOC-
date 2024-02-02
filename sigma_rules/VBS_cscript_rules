@@ -1,0 +1,125 @@
+title: Visual Basic Script Execution
+id: 23250293-eed5-4c39-b57a-841c8933a57d
+status: deprecated
+description: Adversaries may abuse Visual Basic (VB) for execution
+references:
+    - https://github.com/redcanaryco/atomic-red-team/blob/f339e7da7d05f6057fdfcdd3742bfcf365fee2a9/atomics/T1059.005/T1059.005.md
+author: frack113
+date: 2022/01/02
+modified: 2023/03/06
+tags:
+    - attack.execution
+    - attack.t1059.005
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_exe:
+        - OriginalFileName:
+            - 'cscript.exe'
+            - 'wscript.exe'
+        - Image|endswith:
+            - '\cscript.exe'
+            - '\wscript.exe'
+    selection_script:
+        CommandLine|contains: '.vbs'
+    condition: all of selection_*
+falsepositives:
+    - Unknown
+level: medium
+
+title: Potential Dropper Script Execution Via WScript/CScript
+id: cea72823-df4d-4567-950c-0b579eaf0846
+related:
+    - id: 1e33157c-53b1-41ad-bbcc-780b80b58288
+      type: similar
+status: experimental
+description: Detects wscript/cscript executions of scripts located in user directories
+references:
+    - https://thedfirreport.com/2023/10/30/netsupport-intrusion-results-in-domain-compromise/
+    - https://redcanary.com/blog/gootloader/
+author: Margaritis Dimitrios (idea), Florian Roth (Nextron Systems), oscd.community, Nasreddine Bencherchali (Nextron Systems)
+date: 2019/01/16
+modified: 2024/01/30
+tags:
+    - attack.execution
+    - attack.t1059.005
+    - attack.t1059.007
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_exec:
+        Image|endswith:
+            - '\wscript.exe'
+            - '\cscript.exe'
+    selection_paths:
+        CommandLine|contains:
+            - ':\Temp\'
+            - ':\Tmp\'
+            - ':\Users\Public\'
+            - ':\Windows\Temp\'
+            - '\AppData\Local\Temp\'
+    selection_ext:
+        CommandLine|contains:
+            - '.js'
+            - '.jse'
+            - '.vba'
+            - '.vbe'
+            - '.vbs'
+            - '.wsf'
+    condition: all of selection_*
+falsepositives:
+    - Some installers might generate a similar behavior. An initial baseline is required
+level: medium
+
+title: Cscript/Wscript Potentially Suspicious Child Process
+id: b6676963-0353-4f88-90f5-36c20d443c6a
+status: experimental
+description: |
+    Detects potentially suspicious child processes of Wscript/Cscript. These include processes such as rundll32 with uncommon exports or PowerShell spawning rundll32 or regsvr32.
+    Malware such as Pikabot and Qakbot were seen using similar techniques as well as many others.
+references:
+    - Internal Research
+    - https://github.com/pr0xylife/Pikabot/blob/main/Pikabot_30.10.2023.txt
+    - https://github.com/pr0xylife/Pikabot/blob/main/Pikabot_22.12.2023.txt
+author: Nasreddine Bencherchali (Nextron Systems), Alejandro Houspanossian ('@lekz86')
+date: 2023/05/15
+modified: 2024/01/02
+tags:
+    - attack.execution
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_parent:
+        ParentImage|endswith:
+            - '\wscript.exe'
+            - '\cscript.exe'
+    selection_cli_script_main:
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+    # Note: Add other combinations that are suspicious
+    selection_cli_script_option_mshta:
+        CommandLine|contains|all:
+            - 'mshta'
+            - 'http'
+    selection_cli_script_option_other:
+        CommandLine|contains:
+            - 'rundll32'
+            - 'regsvr32'
+            - 'msiexec'
+    selection_cli_standalone:
+        Image|endswith: '\rundll32.exe'
+    filter_main_rundll32_known_exports:
+        Image|endswith: '\rundll32.exe'
+        CommandLine|contains:
+            - 'UpdatePerUserSystemParameters'
+            - 'PrintUIEntry'
+            - 'ClearMyTracksByProcess'
+    condition: selection_parent and ( selection_cli_standalone or (selection_cli_script_main and 1 of selection_cli_script_option_*) ) and not 1 of filter_main_*
+falsepositives:
+    - Some false positives might occur with admin or third party software scripts. Investigate and apply additional filters accordingly.
+level: medium
