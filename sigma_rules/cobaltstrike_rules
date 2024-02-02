@@ -1,0 +1,318 @@
+title: Default Cobalt Strike Certificate
+id: 7100f7e3-92ce-4584-b7b7-01b40d3d4118
+status: test
+description: Detects the presence of default Cobalt Strike certificate in the HTTPS traffic
+references:
+    - https://sergiusechel.medium.com/improving-the-network-based-detection-of-cobalt-strike-c2-servers-in-the-wild-while-reducing-the-6964205f6468
+author: Bhabesh Raj
+date: 2021/06/23
+modified: 2022/10/09
+tags:
+    - attack.command_and_control
+    - attack.s0154
+logsource:
+    product: zeek
+    service: x509
+detection:
+    selection:
+        certificate.serial: 8BB00EE
+    condition: selection
+fields:
+    - san.dns
+    - certificate.subject
+    - certificate.issuer
+falsepositives:
+    - Unknown
+level: high
+
+title: Cobalt Strike DNS Beaconing
+id: 2975af79-28c4-4d2f-a951-9095f229df29
+status: test
+description: Detects suspicious DNS queries known from Cobalt Strike beacons
+references:
+    - https://www.icebrg.io/blog/footprints-of-fin7-tracking-actor-patterns
+    - https://www.sekoia.io/en/hunting-and-detecting-cobalt-strike/
+author: Florian Roth (Nextron Systems)
+date: 2018/05/10
+modified: 2022/10/09
+tags:
+    - attack.command_and_control
+    - attack.t1071.004
+logsource:
+    category: dns
+detection:
+    selection1:
+        query|startswith:
+            - 'aaa.stage.'
+            - 'post.1'
+    selection2:
+        query|contains: '.stage.123456.'
+    condition: 1 of selection*
+falsepositives:
+    - Unknown
+level: critical
+
+title: Suspicious Cobalt Strike DNS Beaconing - Sysmon
+id: f356a9c4-effd-4608-bbf8-408afd5cd006
+related:
+    - id: 0d18728b-f5bf-4381-9dcf-915539fff6c2
+      type: similar
+status: test
+description: Detects a program that invoked suspicious DNS queries known from Cobalt Strike beacons
+references:
+    - https://www.icebrg.io/blog/footprints-of-fin7-tracking-actor-patterns
+    - https://www.sekoia.io/en/hunting-and-detecting-cobalt-strike/
+author: Florian Roth (Nextron Systems)
+date: 2021/11/09
+modified: 2023/01/16
+tags:
+    - attack.command_and_control
+    - attack.t1071.004
+logsource:
+    product: windows
+    category: dns_query
+detection:
+    selection1:
+        QueryName|startswith:
+            - 'aaa.stage.'
+            - 'post.1'
+    selection2:
+        QueryName|contains: '.stage.123456.'
+    condition: 1 of selection*
+falsepositives:
+    - Unknown
+fields:
+    - Image
+    - CommandLine
+level: critical
+
+title: CobaltStrike Named Pipe Pattern Regex
+id: 0e7163d4-9e19-4fa7-9be6-000c61aad77a
+related:
+    - id: 85adeb13-4fc9-4e68-8a4a-c7cb2c336eb7 # Patterns
+      type: similar
+    - id: d5601f8c-b26f-4ab0-9035-69e11a8d4ad2 # Generic
+      type: similar
+status: test
+description: Detects the creation of a named pipe matching a pattern used by CobaltStrike Malleable C2 profiles
+references:
+    - https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575
+    - https://gist.github.com/MHaggis/6c600e524045a6d49c35291a21e10752
+author: Florian Roth (Nextron Systems)
+date: 2021/07/30
+modified: 2022/12/31
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1055
+logsource:
+    product: windows
+    category: pipe_created
+    definition: 'Note that you have to configure logging for Named Pipe Events in Sysmon config (Event ID 17 and Event ID 18). The basic configuration is in popular sysmon configuration (https://github.com/SwiftOnSecurity/sysmon-config), but it is worth verifying. You can also use other repo, e.g. https://github.com/Neo23x0/sysmon-config, https://github.com/olafhartong/sysmon-modular You can also use other repo, e.g. https://github.com/Neo23x0/sysmon-config, https://github.com/olafhartong/sysmon-modular. How to test detection? You can always use Cobalt Strike, but also you can check powershell script from this site https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575'
+detection:
+    selection:
+        - PipeName|re: '\\mojo\.5688\.8052\.(?:183894939787088877|35780273329370473)[0-9a-f]{2}'
+        - PipeName|re: '\\wkssvc_?[0-9a-f]{2}'
+        - PipeName|re: '\\ntsvcs[0-9a-f]{2}'
+        - PipeName|re: '\\DserNamePipe[0-9a-f]{2}'
+        - PipeName|re: '\\SearchTextHarvester[0-9a-f]{2}'
+        - PipeName|re: '\\mypipe-(?:f|h)[0-9a-f]{2}'
+        - PipeName|re: '\\windows\.update\.manager[0-9a-f]{2,3}'
+        - PipeName|re: '\\ntsvcs_[0-9a-f]{2}'
+        - PipeName|re: '\\scerpc_?[0-9a-f]{2}'
+        - PipeName|re: '\\PGMessagePipe[0-9a-f]{2}'
+        - PipeName|re: '\\MsFteWds[0-9a-f]{2}'
+        - PipeName|re: '\\f4c3[0-9a-f]{2}'
+        - PipeName|re: '\\fullduplex_[0-9a-f]{2}'
+        - PipeName|re: '\\msrpc_[0-9a-f]{4}'
+        - PipeName|re: '\\win\\msrpc_[0-9a-f]{2}'
+        - PipeName|re: '\\f53f[0-9a-f]{2}'
+        - PipeName|re: '\\rpc_[0-9a-f]{2}'
+        - PipeName|re: '\\spoolss_[0-9a-f]{2}'
+        - PipeName|re: '\\Winsock2\\CatalogChangeListener-[0-9a-f]{3}-0,'
+    condition: selection
+falsepositives:
+    - Unknown
+level: critical
+
+title: Suspicious Cobalt Strike DNS Beaconing - DNS Client
+id: 0d18728b-f5bf-4381-9dcf-915539fff6c2
+related:
+    - id: f356a9c4-effd-4608-bbf8-408afd5cd006
+      type: similar
+status: test
+description: Detects a program that invoked suspicious DNS queries known from Cobalt Strike beacons
+references:
+    - https://www.icebrg.io/blog/footprints-of-fin7-tracking-actor-patterns
+    - https://www.sekoia.io/en/hunting-and-detecting-cobalt-strike/
+author: Nasreddine Bencherchali (Nextron Systems)
+date: 2023/01/16
+tags:
+    - attack.command_and_control
+    - attack.t1071.004
+logsource:
+    product: windows
+    service: dns-client
+    definition: 'Requirements: Microsoft-Windows-DNS Client Events/Operational Event Log must be enabled/collected in order to receive the events.'
+detection:
+    selection_eid:
+        EventID: 3008
+    selection_query_1:
+        QueryName|startswith:
+            - 'aaa.stage.'
+            - 'post.1'
+    selection_query_2:
+        QueryName|contains: '.stage.123456.'
+    condition: selection_eid and 1 of selection_query_*
+falsepositives:
+    - Unknown
+level: critical
+
+title: CobaltStrike Service Installations - Security
+id: d7a95147-145f-4678-b85d-d1ff4a3bb3f6
+related:
+    - id: 5a105d34-05fc-401e-8553-272b45c1522d
+      type: derived
+status: test
+description: Detects known malicious service installs that appear in cases in which a Cobalt Strike beacon elevates privileges or lateral movement
+references:
+    - https://www.sans.org/webcasts/119395
+    - https://www.crowdstrike.com/blog/getting-the-bacon-from-cobalt-strike-beacon/
+    - https://thedfirreport.com/2021/08/29/cobalt-strike-a-defenders-guide/
+author: Florian Roth (Nextron Systems), Wojciech Lesicki
+date: 2021/05/26
+modified: 2022/11/27
+tags:
+    - attack.execution
+    - attack.privilege_escalation
+    - attack.lateral_movement
+    - attack.t1021.002
+    - attack.t1543.003
+    - attack.t1569.002
+logsource:
+    product: windows
+    service: security
+    definition: The 'System Security Extension' audit subcategory need to be enabled to log the EID 4697
+detection:
+    event_id:
+        EventID: 4697
+    selection1:
+        ServiceFileName|contains|all:
+            - 'ADMIN$'
+            - '.exe'
+    selection2:
+        ServiceFileName|contains|all:
+            - '%COMSPEC%'
+            - 'start'
+            - 'powershell'
+    selection3:
+        ServiceFileName|contains: 'powershell -nop -w hidden -encodedcommand'
+    selection4:
+        ServiceFileName|base64offset|contains: "IEX (New-Object Net.Webclient).DownloadString('http://127.0.0.1:"
+    condition: event_id and 1 of selection*
+falsepositives:
+    - Unknown
+level: high
+
+title: CobaltStrike Load by Rundll32
+id: ae9c6a7c-9521-42a6-915e-5aaa8689d529
+status: test
+description: Rundll32 can be use by Cobalt Strike with StartW function to load DLLs from the command line.
+references:
+    - https://www.cobaltstrike.com/help-windows-executable
+    - https://redcanary.com/threat-detection-report/
+    - https://thedfirreport.com/2020/10/18/ryuk-in-5-hours/
+author: Wojciech Lesicki
+date: 2021/06/01
+modified: 2022/09/16
+tags:
+    - attack.defense_evasion
+    - attack.t1218.011
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_rundll:
+        - Image|endswith: '\rundll32.exe'
+        - OriginalFileName: RUNDLL32.EXE
+        - CommandLine|contains:
+              - 'rundll32.exe'
+              - 'rundll32 '
+    selection_params:
+        CommandLine|contains: '.dll'
+        CommandLine|endswith:
+            - ' StartW'
+            - ',StartW'
+    condition: all of selection*
+falsepositives:
+    - Unknown
+level: high
+
+title: Potential CobaltStrike Process Patterns
+id: f35c5d71-b489-4e22-a115-f003df287317
+status: test
+description: Detects potential process patterns related to Cobalt Strike beacon activity
+references:
+    - https://hausec.com/2021/07/26/cobalt-strike-and-tradecraft/
+    - https://thedfirreport.com/2021/08/29/cobalt-strike-a-defenders-guide/
+author: Florian Roth (Nextron Systems), Nasreddine Bencherchali (Nextron Systems)
+date: 2021/07/27
+modified: 2023/03/29
+tags:
+    - attack.execution
+    - attack.t1059
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_generic_1:
+        CommandLine|endswith: 'cmd.exe /C whoami'
+        ParentImage|startswith: 'C:\Temp\'
+    selection_generic_2:
+        ParentImage|endswith:
+            - '\runonce.exe'
+            - '\dllhost.exe'
+        CommandLine|contains|all:
+            - 'cmd.exe /c echo'
+            - '> \\\\.\\pipe'
+    selection_conhost_1:
+        ParentCommandLine|contains|all:
+            - 'cmd.exe /C echo'
+            - ' > \\\\.\\pipe'
+        CommandLine|endswith: 'conhost.exe 0xffffffff -ForceV1'
+    selection_conhost_2:
+        ParentCommandLine|endswith: '/C whoami'
+        CommandLine|endswith: 'conhost.exe 0xffffffff -ForceV1'
+    condition: 1 of selection_*
+falsepositives:
+    - Unknown
+level: high
+
+title: HackTool - CobaltStrike BOF Injection Pattern
+id: 09706624-b7f6-455d-9d02-adee024cee1d
+status: test
+description: Detects a typical pattern of a CobaltStrike BOF which inject into other processes
+references:
+    - https://github.com/boku7/injectAmsiBypass
+    - https://github.com/boku7/spawn
+author: Christian Burkard (Nextron Systems)
+date: 2021/08/04
+modified: 2023/11/28
+tags:
+    - attack.execution
+    - attack.t1106
+    - attack.defense_evasion
+    - attack.t1562.001
+logsource:
+    category: process_access
+    product: windows
+detection:
+    selection:
+        CallTrace|re: '^C:\\Windows\\SYSTEM32\\ntdll\.dll\+[a-z0-9]{4,6}\|C:\\Windows\\System32\\KERNELBASE\.dll\+[a-z0-9]{4,6}\|UNKNOWN\([A-Z0-9]{16}\)$'
+        GrantedAccess:
+            - '0x1028'
+            - '0x1fffff'
+    condition: selection
+falsepositives:
+    - Unknown
+level: high
