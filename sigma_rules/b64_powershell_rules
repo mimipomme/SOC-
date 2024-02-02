@@ -1,0 +1,184 @@
+title: Suspicious Execution of Powershell with Base64
+id: fb843269-508c-4b76-8b8d-88679db22ce7
+status: test
+description: Commandline to launch powershell with a base64 payload
+references:
+    - https://github.com/redcanaryco/atomic-red-team/blob/f339e7da7d05f6057fdfcdd3742bfcf365fee2a9/atomics/T1059.001/T1059.001.md#atomic-test-20---powershell-invoke-known-malicious-cmdlets
+    - https://unit42.paloaltonetworks.com/unit42-pulling-back-the-curtains-on-encodedcommand-powershell-attacks/
+    - https://mikefrobbins.com/2017/06/15/simple-obfuscation-with-powershell-using-base64-encoding/
+author: frack113
+date: 2022/01/02
+modified: 2023/01/05
+tags:
+    - attack.execution
+    - attack.t1059.001
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith:
+            - \powershell.exe
+            - \pwsh.exe
+        CommandLine|contains:
+            - ' -e '
+            - ' -en '
+            - ' -enc '
+            - ' -enco'
+            - ' -ec '
+    filter_encoding:
+        CommandLine|contains: ' -Encoding '
+    filter_azure:
+        ParentImage|contains:
+            - 'C:\Packages\Plugins\Microsoft.GuestConfiguration.ConfigurationforWindows\'
+            - '\gc_worker.exe'
+    condition: selection and not 1 of filter_*
+falsepositives:
+    - Unknown
+level: medium
+
+title: Suspicious PowerShell Encoded Command Patterns
+id: b9d9cc83-380b-4ba3-8d8f-60c0e7e2930c
+status: test
+description: Detects PowerShell command line patterns in combincation with encoded commands that often appear in malware infection chains
+references:
+    - https://app.any.run/tasks/b9040c63-c140-479b-ad59-f1bb56ce7a97/
+author: Florian Roth (Nextron Systems)
+date: 2022/05/24
+modified: 2023/01/05
+tags:
+    - attack.execution
+    - attack.t1059.001
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.Exe'
+              - 'pwsh.dll'
+    selection_flags:
+        CommandLine|contains:
+            - ' -e '
+            - ' -en '
+            - ' -enc '
+            - ' -enco'
+    selection_encoded:
+        CommandLine|contains:
+            - ' JAB'
+            - ' SUVYI'
+            - ' SQBFAFgA'
+            - ' aWV4I'
+            - ' IAB'
+            - ' PAA'
+            - ' aQBlAHgA'
+    filter_gcworker:
+        ParentImage|contains:
+            - 'C:\Packages\Plugins\Microsoft.GuestConfiguration.ConfigurationforWindows\'
+            - '\gc_worker.exe'
+    condition: all of selection_* and not 1 of filter_*
+falsepositives:
+    - Other tools that work with encoded scripts in the command line instead of script files
+level: high
+
+title: Suspicious Encoded PowerShell Command Line
+id: ca2092a1-c273-4878-9b4b-0d60115bf5ea
+status: test
+description: Detects suspicious powershell process starts with base64 encoded commands (e.g. Emotet)
+references:
+    - https://app.any.run/tasks/6217d77d-3189-4db2-a957-8ab239f3e01e
+author: Florian Roth (Nextron Systems), Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, Anton Kutepov, oscd.community
+date: 2018/09/03
+modified: 2023/04/06
+tags:
+    - attack.execution
+    - attack.t1059.001
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.EXE'
+              - 'pwsh.dll'
+    selection_cli_enc:
+        CommandLine|contains: ' -e' # covers -en and -enc
+    selection_cli_content:
+        CommandLine|contains:
+            - ' JAB'
+            - ' SUVYI'
+            - ' SQBFAFgA'
+            - ' aQBlAHgA'
+            - ' aWV4I'
+            - ' IAA'
+            - ' IAB'
+            - ' UwB'
+            - ' cwB'
+    selection_standalone:
+        CommandLine|contains:
+            - '.exe -ENCOD '
+            - ' BA^J e-' # Reversed
+    filter_optional_remote_signed:
+        CommandLine|contains: ' -ExecutionPolicy remotesigned '
+    condition: selection_img and (all of selection_cli_* or selection_standalone) and not 1 of filter_optional_*
+level: high
+
+title: Potential Encoded PowerShell Patterns In CommandLine
+id: cdf05894-89e7-4ead-b2b0-0a5f97a90f2f
+related:
+    - id: 5b572dcf-254b-425c-a8c5-d9af6bea35a6
+      type: similar
+status: test
+description: Detects specific combinations of encoding methods in PowerShell via the commandline
+references:
+    - https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=65
+author: Teymur Kheirkhabarov (idea), Vasiliy Burov (rule), oscd.community, Tim Shelton
+date: 2020/10/11
+modified: 2023/01/26
+tags:
+    - attack.defense_evasion
+    - attack.t1027
+    - attack.execution
+    - attack.t1059.001
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.EXE'
+              - 'pwsh.dll'
+    selection_to_1:
+        CommandLine|contains:
+            - 'ToInt'
+            - 'ToDecimal'
+            - 'ToByte'
+            - 'ToUint'
+            - 'ToSingle'
+            - 'ToSByte'
+    selection_to_2:
+        CommandLine|contains:
+            - 'ToChar'
+            - 'ToString'
+            - 'String'
+    selection_gen_1:
+        CommandLine|contains|all:
+            - 'char'
+            - 'join'
+    selection_gen_2:
+        CommandLine|contains|all:
+            - 'split'
+            - 'join'
+    condition: selection_img and (all of selection_to_* or 1 of selection_gen_*)
+falsepositives:
+    - Unknown
+level: low
